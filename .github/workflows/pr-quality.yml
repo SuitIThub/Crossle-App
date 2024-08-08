@@ -6,7 +6,7 @@ name: Quality
 on:
   pull_request:
     types: [opened, reopened, edited]
-    branches: [ "main" ]
+    branches: [ "master" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
