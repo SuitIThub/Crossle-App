@@ -37,12 +37,14 @@ public class WorkActivity extends AppCompatActivity {
         Intent intent = getIntent();
 
         myUri = Uri.parse(intent.getStringExtra("imageUri"));
+
+        convertImageToJson(myUri);
     }
 
     //TODO: Add image analyzer
     public void convertImageToJson(Uri uri){
         String jsonstring = new String();
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);  // Load OpenCV library
+        //System.loadLibrary(Core.NATIVE_LIBRARY_NAME);  // Load OpenCV library
         Mat img = Imgcodecs.imread(uri.getPath());
         int h = img.rows();
         int w = img.cols();
