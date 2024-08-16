@@ -1,5 +1,6 @@
 package com.example.crossle;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -20,6 +21,8 @@ import java.util.List;
 
 public class WorkActivity extends AppCompatActivity {
 
+    private Uri myUri;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,6 +33,10 @@ public class WorkActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        Intent intent = getIntent();
+
+        myUri = Uri.parse(intent.getStringExtra("imageUri"));
     }
 
     //TODO: Add image analyzer
