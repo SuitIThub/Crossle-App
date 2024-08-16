@@ -52,7 +52,15 @@ public class CamActivity extends AppCompatActivity {
         IVPreviewImage = findViewById(R.id.IVPreviewImage);
         BSendImage = findViewById(R.id.BSendImage);
 
-        //TODO: set button on click handler to send image to analyze activity
+        BSendImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // go to the work activity
+                Intent myIntent = new Intent(CamActivity.this, WorkActivity.class);
+                myIntent.putExtra("imageUri", mCurrentPhotoPath.toString());
+                CamActivity.this.startActivity(myIntent);
+            }
+        });
 
         triggerImageChooser();
     }
