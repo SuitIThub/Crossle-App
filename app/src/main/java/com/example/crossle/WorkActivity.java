@@ -102,13 +102,15 @@ public class WorkActivity extends AppCompatActivity {
         Mat M = Imgproc.getPerspectiveTransform(pts1, pts2);
         Mat warped = new Mat();
         Imgproc.warpPerspective(img, warped, M, new Size(1600, 900));
-        //function(jsonstring)
+
         File outputDir = WorkActivity.this.getCacheDir(); // context being the Activity pointer
         try {
             File outputFile = File.createTempFile("warped_output", ".jpg", outputDir);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        Imgcodecs.imwrite("warped_output.jpg", warped);
+        Imgcodecs.imwrite(outputDir + "/warped_output.jpg", warped);
+
+        //function(jsonstring)
     }
 }
