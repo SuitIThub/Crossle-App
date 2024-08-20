@@ -3,16 +3,20 @@ package com.example.crossle;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.utils.Converters;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,6 +26,10 @@ import java.util.List;
 public class WorkActivity extends AppCompatActivity {
 
     private Uri myUri;
+
+    static {
+        OpenCVLoader.initDebug();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +41,7 @@ public class WorkActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
+        OpenCVLoader.initDebug();
         Intent intent = getIntent();
 
         myUri = Uri.parse(intent.getStringExtra("imageUri"));
