@@ -8,19 +8,20 @@
     tools:context=".WorkActivity">
 
     <TextView
-        android:id="@+id/textView4"
+        android:id="@+id/textViewPuzzle"
         android:layout_width="0dp"
-        android:layout_height="32dp"
+        android:layout_height="48dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:text="TextView"
+        android:textAlignment="center"
+        android:textSize="24sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ProgressBar
-        android:id="@+id/progressBar3"
+        android:id="@+id/progressBarPuzzle"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -29,7 +30,7 @@
         android:layout_marginEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView4" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewPuzzle" />
 
     <ScrollView
         android:id="@+id/scrollViewPuzzle"
@@ -39,22 +40,25 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
+        android:fillViewport="true"
         android:scrollbarStyle="outsideOverlay"
         android:scrollbars="horizontal|vertical"
         app:layout_constraintBottom_toTopOf="@+id/buttonSolve"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/progressBar3">
+        app:layout_constraintTop_toBottomOf="@+id/progressBarPuzzle">
+
         <HorizontalScrollView
             android:layout_width="wrap_content"
+            android:fillViewport="true"
             android:layout_height="wrap_content">
+
             <androidx.gridlayout.widget.GridLayout
                 android:id="@+id/gridLayoutPuzzle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:columnCount="3"
-                app:rowCount="3">
-            </androidx.gridlayout.widget.GridLayout>
+                app:rowCount="3" />
         </HorizontalScrollView>
     </ScrollView>
 
