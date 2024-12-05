@@ -12,9 +12,14 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.MediaStore;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -33,6 +38,10 @@ public class CamActivity extends AppCompatActivity {
     // One Preview Image
     ImageView IVPreviewImage;
     Button BSendImage;
+    ImageButton IBBackButton;
+    ImageButton IBResetButton;
+
+    private com.example.crossle.ShapeOverlayView shapeOverlayView;
 
     private Uri mCurrentPhotoPath;
 
@@ -43,6 +52,8 @@ public class CamActivity extends AppCompatActivity {
 
     private boolean cameraPermission = false;
 
+    private boolean imageManipulation = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,6 +62,36 @@ public class CamActivity extends AppCompatActivity {
         // register the UI widgets with their appropriate IDs
         IVPreviewImage = findViewById(R.id.IVPreviewImage);
         BSendImage = findViewById(R.id.BSendImage);
+        IBBackButton = findViewById(R.id.IBBack);
+        IBResetButton = findViewById(R.id.IBReset);
+
+        EditText ETRows = findViewById(R.id.ETRows);
+        EditText ETColumns = findViewById(R.id.ETColumns);
+
+        IVPreviewImage = findViewById(R.id.IVPreviewImage);
+        shapeOverlayView = findViewById(R.id.shapeOverlayView);
+        shapeOverlayView.setImageView(IVPreviewImage);
+
+        BSendImage.setEnabled(false); // Initially disable the button
+
+        TextWatcher textWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                String rowsText = ETRows.getText().toString().trim();
+                String columnsText = ETColumns.getText().toString().trim();
+                BSendImage.setEnabled(!rowsText.isEmpty() && !columnsText.isEmpty());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        };
+
+        ETRows.addTextChangedListener(textWatcher);
+        ETColumns.addTextChangedListener(textWatcher);
+
 
         BSendImage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -59,6 +100,24 @@ public class CamActivity extends AppCompatActivity {
                 Intent myIntent = new Intent(CamActivity.this, WorkActivity.class);
                 myIntent.putExtra("imageUri", mCurrentPhotoPath.toString());
                 CamActivity.this.startActivity(myIntent);
+            }
+        });
+
+        IBBackButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // go back to the main activity
+                System.out.println("Going back to main activity");
+                Intent myIntent = new Intent(CamActivity.this, MainActivity.class);
+                CamActivity.this.startActivity(myIntent);
+            }
+        });
+
+        IBResetButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                System.out.println("Resetting Image");
+                shapeOverlayView.setShapeToImageCorners();
             }
         });
 
@@ -126,7 +185,8 @@ public class CamActivity extends AppCompatActivity {
                     }
                 }
 
-                BSendImage.setVisibility(View.VISIBLE);
+//                BSendImage.setVisibility(View.VISIBLE);
+                shapeOverlayView.setShapeToImageCorners();
             }
         }
         else {
