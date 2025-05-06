@@ -1,11 +1,17 @@
 package com.example.crossle.classes;
 
+import android.content.Context;
+
+import com.example.crossle.WorkActivity;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 
 public class Helper {
-    public static ArrayList<JSONObject> getDummyJson() {
+    public static JSONObject getDummyJson() {
         ArrayList<String> json_string = new ArrayList();
         json_string.add(
                 "{" +
@@ -117,14 +123,54 @@ public class Helper {
                         "    \"answers\": []" +
                         "}"
         );
+        String solution = "[\"2:0\",\"2:4\",\"1:1\",\"2:6\",\"3:2\"]";
         try {
-            ArrayList<JSONObject> jsons = new ArrayList();
+            ArrayList<JSONObject> jsons = new ArrayList<>();
             for (String json : json_string) {
                 jsons.add(new JSONObject(json));
             }
-            return jsons;
+            JSONObject result = new JSONObject();
+            result.put("questions", new JSONArray(jsons));
+            result.put("solution", new JSONArray(solution));
+            return result;
         } catch (Exception e) {
             return null;
         }
+    }
+
+
+    public static <T> ArrayList<T> jsonArrayToArrayList(JSONArray jsonArray) throws JSONException {
+        ArrayList<T> list = new ArrayList<>();
+        for (int i = 0; i < jsonArray.length(); i++) {
+            list.add((T)jsonArray.get(i));
+        }
+        return list;
+    }
+
+    public static int dpToPx(int dp, Context context) {
+        float density = context.getResources()
+                .getDisplayMetrics()
+                .density;
+        return Math.round((float) dp * density);
+    }
+
+    //This method joins a generic typed array of objects into a string
+    public static <T> String join(T[] array, String delimiter) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < array.length; i++) {
+            sb.append(array[i].toString());
+            if (i < array.length - 1) {
+                sb.append(delimiter);
+            }
+        }
+        return sb.toString();
+    }
+    //This method parses a string array into a Integer array
+    public static Integer[] parseIntArray(String[] array) {
+        Integer[] intArray = new Integer[array.length];
+        for (int i = 0; i < array.length; i++) {
+            intArray[i] = Integer.parseInt(array[i]);
+        }
+        return intArray;
     }
 }

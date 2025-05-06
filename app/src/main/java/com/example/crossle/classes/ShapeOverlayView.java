@@ -1,17 +1,35 @@
 package com.example.crossle;
 
+import static com.example.crossle.classes.Helper.dpToPx;
+
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
+import android.view.GestureDetector;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.Toast;
 
+import com.example.crossle.classes.Helper;
+
 public class ShapeOverlayView extends View {
+
+    private class GestureListener extends GestureDetector.SimpleOnGestureListener {
+        @Override
+        public boolean onDoubleTap(MotionEvent e) {
+            toggleFineMode();
+            return true;
+        }
+    }
 
     private Paint paint;
     private Path path;
@@ -21,9 +39,19 @@ public class ShapeOverlayView extends View {
     private Paint circlePaint;
     private ImageView imageView;
 
+    private PopupWindow popupWindow;
+    private ImageView zoomedImageView;
+
+    private boolean fineMode = false;
+    private GestureDetector gestureDetector;
+
+    private boolean isDrawing = false;
+
     public ShapeOverlayView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
+        initPopupWindow(context);
+        gestureDetector = new GestureDetector(context, new GestureListener());
     }
 
     private void init() {
@@ -39,14 +67,76 @@ public class ShapeOverlayView extends View {
 
         path = new Path();
         points = new float[]{100, 100, 300, 100, 300, 300, 100, 300}; // Initial rectangle
+        isDrawing = true;
+    }
+
+    private void initPopupWindow(Context context) {
+        LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View popupView = inflater.inflate(R.layout.popup_zoom_view, null);
+        zoomedImageView = popupView.findViewById(R.id.zoomedImageView);
+
+        popupWindow = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false);
+    }
+
+    private void showPopupWindow(float x, float y) {
+        if (!popupWindow.isShowing()) {
+            popupWindow.showAtLocation(this, Gravity.NO_GRAVITY, (int) x, (int) y - 150);
+        }
+    }
+
+    private void updatePopupWindow(float x, float y) {
+        if (imageView == null || imageView.getDrawable() == null) {
+            return;
+        }
+
+        // Capture the bitmap from the ImageView
+        Bitmap imageViewBitmap = Bitmap.createBitmap(imageView.getWidth(), imageView.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas imageViewCanvas = new Canvas(imageViewBitmap);
+        imageView.draw(imageViewCanvas);
+
+        // Create a new bitmap with the same dimensions as the ImageView
+        Bitmap combinedBitmap = Bitmap.createBitmap(imageViewBitmap.getWidth(), imageViewBitmap.getHeight(), imageViewBitmap.getConfig());
+
+        // Draw the ImageView bitmap and the shape overlay onto the combined bitmap
+        Canvas canvas = new Canvas(combinedBitmap);
+        canvas.drawBitmap(imageViewBitmap, 0, 0, null);
+        draw(canvas);
+
+        // Calculate the zoomed area
+        int zoomSize = 100; // Size of the zoomed area
+        int left = (int) Math.max(0, x - zoomSize / 2);
+        int top = (int) Math.max(0, y - zoomSize / 2);
+        int right = (int) Math.min(combinedBitmap.getWidth(), x + zoomSize / 2);
+        int bottom = (int) Math.min(combinedBitmap.getHeight(), y + zoomSize / 2);
+
+        // Create the zoomed bitmap
+        Bitmap zoomedBitmap = Bitmap.createBitmap(combinedBitmap, left, top, right - left, bottom - top);
+
+        // Update the zoomedImageView with the zoomed bitmap
+        zoomedImageView.setImageBitmap(zoomedBitmap);
+        popupWindow.update((int) x - zoomSize / 2, (int) y - 120, dpToPx(200, getContext()), dpToPx(200, getContext()));
+    }
+
+    private void hidePopupWindow() {
+        if (popupWindow.isShowing()) {
+            popupWindow.dismiss();
+        }
     }
 
     public void setImageView(ImageView imageView) {
         this.imageView = imageView;
     }
 
+    public void toggleFineMode() {
+        fineMode = !fineMode;
+        Toast.makeText(getContext(), "Fine mode " + (fineMode ? "enabled" : "disabled"), Toast.LENGTH_SHORT).show();
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
+        if (points.length < 2 || !isDrawing) {
+            return;
+        }
         super.onDraw(canvas);
         path.reset();
         path.moveTo(points[0], points[1]);
@@ -55,7 +145,9 @@ public class ShapeOverlayView extends View {
         }
         path.close();
         canvas.drawPath(path, paint);
-        drawCircles(canvas);
+        if (selectedPointIndex == -1) {
+            drawCircles(canvas);
+        }
     }
 
     private void drawCircles(Canvas canvas) {
@@ -71,6 +163,7 @@ public class ShapeOverlayView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        gestureDetector.onTouchEvent(event);
         float x = event.getX();
         float y = event.getY();
         float[] imageViewCorners = getImageViewCorners();
@@ -78,9 +171,23 @@ public class ShapeOverlayView extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 selectedPointIndex = getSelectedPointIndex(x, y);
+                if (selectedPointIndex != -1) {
+                    showPopupWindow(x, y);
+                    paint.setStrokeWidth(2);
+                    invalidate();
+                }
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (selectedPointIndex != -1) {
+                    float dx = x - points[selectedPointIndex];
+                    float dy = y - points[selectedPointIndex + 1];
+                    if (fineMode) {
+                        dx /= 10;
+                        dy /= 10;
+                    }
+                    x = points[selectedPointIndex] + dx;
+                    y = points[selectedPointIndex + 1] + dy;
+
                     // Apply constraints based on the selected point
                     switch (selectedPointIndex) {
                         case 0: // Top-left corner
@@ -103,15 +210,16 @@ public class ShapeOverlayView extends View {
                     points[selectedPointIndex] = x;
                     points[selectedPointIndex + 1] = y;
                     invalidate();
+
+                    // Create a zoomed-in bitmap of the current corner
+                    updatePopupWindow(x, y);
                 }
                 break;
             case MotionEvent.ACTION_UP:
-                // Print the shape coordinates relative to the bitmap
-                float[] relativeCoordinates = getShapeCoordinatesRelativeToBitmap();
-                for (int i = 0; i < relativeCoordinates.length; i += 2) {
-                    System.out.println("Point " + (i / 2 + 1) + ": (" + relativeCoordinates[i] + ", " + relativeCoordinates[i + 1] + ")");
-                }
+                hidePopupWindow();
                 selectedPointIndex = -1;
+                paint.setStrokeWidth(5);
+                invalidate();
                 break;
         }
         return true;
@@ -126,9 +234,16 @@ public class ShapeOverlayView extends View {
         return -1;
     }
 
-    public float[] getShapeCoordinatesRelativeToBitmap() {
+    public void clearShape() {
+//        path.reset();
+//        points = new float[0]; // Clear the points array
+        isDrawing = false;
+        invalidate(); // Redraw the view
+    }
+
+    public int[] getShapeCoordinatesRelativeToBitmap() {
         if (imageView == null || imageView.getDrawable() == null) {
-            return new float[0];
+            return new int[0];
         }
 
         // Get image dimensions
@@ -153,18 +268,13 @@ public class ShapeOverlayView extends View {
         float top = (viewHeight - actualImageHeight) / 2;
 
         // Calculate the shape coordinates relative to the bitmap
-        float[] relativeCoordinates = new float[points.length];
+        int[] relativeCoordinates = new int[points.length];
         for (int i = 0; i < points.length; i += 2) {
-            relativeCoordinates[i] = (points[i] - left) / scale;
-            relativeCoordinates[i + 1] = (points[i + 1] - top) / scale;
+            relativeCoordinates[i] = (int)((points[i] - left) / scale);
+            relativeCoordinates[i + 1] = (int)((points[i + 1] - top) / scale);
         }
 
         return relativeCoordinates;
-    }
-
-    public float get16DPInPixel() {
-        float scale = getContext().getResources().getDisplayMetrics().density;
-        return 16 * scale + 0.5f;
     }
 
     public float[] getImageViewCorners() {
@@ -205,6 +315,12 @@ public class ShapeOverlayView extends View {
         imageCorners[7] = top + actualImageHeight;
 
         return imageCorners;
+    }
+
+    public void activateShape() {
+//        points = new float[]{100, 100, 300, 100, 300, 300, 100, 300};
+        isDrawing = true;
+//        setShapeToImageCorners();
     }
 
     public void setShapeToImageCorners() {

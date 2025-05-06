@@ -11,6 +11,12 @@ navigationFragment = "2.6.0"
 navigationUi = "2.6.0"
 activity = "1.8.0"
 gridlayout = "1.0.0"
+okhttp = "4.9.3"
+httpcomponents = "4.5.13"
+mongodb = "4.9.0"
+slf4jApi = "2.0.7"
+slf4jSimple = "2.0.7"
+logback = "1.2.11"
 
 [libraries]
 jsonLib = { module = "org.json:json", version.ref = "jsonLib" }
@@ -24,6 +30,12 @@ navigation-fragment = { group = "androidx.navigation", name = "navigation-fragme
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 gridlayout = { group = "androidx.gridlayout", name = "gridlayout", version.ref = "gridlayout" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+httpcomponents = { group = "org.apache.httpcomponents", name = "httpclient", version.ref = "httpcomponents" }
+mongodb = { group = "org.mongodb", name = "mongodb-driver-sync", version.ref = "mongodb" }
+slf4jApi = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4jApi" }
+slf4jSimple = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4jSimple" }
+logback = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

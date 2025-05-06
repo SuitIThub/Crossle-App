@@ -34,6 +34,19 @@
         android:background="@android:color/transparent"
         android:clickable="true"
         android:src="@drawable/baseline_refresh_32" />
+    <ImageButton
+        android:id="@+id/IBSettings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toStartOf="@id/IBReset"
+        android:layout_alignParentTop="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:padding="16dp"
+        android:background="@android:color/transparent"
+        android:clickable="true"
+        android:src="@drawable/baseline_settings_32" />
+
 
     <TextView
         android:id="@+id/TVInstructions"
@@ -44,8 +57,8 @@
         android:layout_marginTop="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:text="Enter puzzle dimensions and crop image to puzzle frame."
-        android:textSize="24sp" />
+        android:text="Enter puzzle dimensions and crop image to puzzle frame.\nDouble-Tab for fine-mode."
+        android:textSize="16sp" />
 
     <LinearLayout
         android:id="@+id/LLDimensions"
@@ -80,12 +93,33 @@
             android:textSize="18sp" />
     </LinearLayout>
 
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/LLDimensions"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:visibility="gone"
+        android:max="100"
+        style="?android:attr/progressBarStyleHorizontal" />
+
+    <TextView
+        android:id="@+id/progressText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/progressBar"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        android:textSize="16sp" />
     <!--ImageView to preview the selected image-->
     <RelativeLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_above="@id/BSendImage"
-        android:layout_below="@id/LLDimensions"
+        android:layout_below="@id/progressText"
         android:layout_centerHorizontal="true"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
@@ -119,5 +153,4 @@
         android:textColor="@android:color/white"
         android:textSize="18sp"
         android:visibility="visible" />
-
 </RelativeLayout>

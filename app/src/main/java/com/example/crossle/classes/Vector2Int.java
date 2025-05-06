@@ -76,6 +76,10 @@ public class Vector2Int {
         return new Vector2Int(-1, 0);
     }
 
+    public static Vector2Int RIGHT() {
+        return new Vector2Int(1, 0);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {

@@ -25,6 +25,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -36,6 +37,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.widget.TextViewCompat;
 import androidx.gridlayout.widget.GridLayout;
 
+import com.example.crossle.LocalDBManager.LocalDBManager;
 import com.example.crossle.classes.Vector2Int;
 
 import org.json.*;
@@ -44,12 +46,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 
+import com.example.crossle.classes.Helper;
+
 public class WorkActivity extends AppCompatActivity {
 
     private static final Integer BOX_WIDTH = 64;
     private static final Integer BOX_HEIGHT = 64;
-
-    private Uri myUri;
 
     private HashMap<Integer, JSONObject> questions = new HashMap<>();
 
@@ -65,6 +67,13 @@ public class WorkActivity extends AppCompatActivity {
 
     private View[][] puzzleGrid;
 
+    private ArrayList<Vector2Int> solutionPositions;
+
+    private LinearLayout linearLayoutSolution;
+
+    LocalDBManager dbManager;
+    private int puzzleID = -1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,27 +81,46 @@ public class WorkActivity extends AppCompatActivity {
 
         GPuzzleGrid = findViewById(R.id.gridLayoutPuzzle);
         GPuzzleText = findViewById(R.id.textViewPuzzle);
+        linearLayoutSolution = findViewById(R.id.linearLayoutSolution);
+
+        dbManager = new LocalDBManager();
 
         Intent intent = getIntent();
 
-        myUri = Uri.parse(intent.getStringExtra("imageUri"));
+        // get JSONObject from intent with key "puzzle"
+        JSONObject puzzle = null;
+        String json_string = intent.getStringExtra("puzzle");
+        try {
+            puzzle = new JSONObject(json_string);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+
+        int rows = intent.getIntExtra("rows", 1);
+        int cols = intent.getIntExtra("columns", 1);
 
         createPuzzleGrid(5, 5, getDummyJson());
     }
 
     private void configurePuzzleGrid(int rows, int cols) {
-
         GPuzzleGrid.setRowCount(rows);
         GPuzzleGrid.setColumnCount(cols);
     }
 
-    private void buildPuzzleGrid(int width, int height, ArrayList<JSONObject> jsons) {
+    private void buildPuzzleGrid(int width, int height, JSONObject json) throws JSONException {
+        ArrayList<JSONObject> questionJsons = jsonArrayToArrayList(json.getJSONArray("questions"));
+        JSONArray solutionJson = json.getJSONArray("solution");
+
         configurePuzzleGrid(height, width);
 
         puzzleGrid = new View[height][width];
 
-        HashMap<Integer, Vector2Int> questionPositions = getQuestionPositions(jsons);
-        HashMap<Integer, Vector2Int> questionDirections = getQuestionDirection(jsons);
+        HashMap<Integer, Vector2Int> questionPositions = getQuestionPositions(questionJsons);
+        HashMap<Integer, Vector2Int> questionDirections = getQuestionDirection(questionJsons);
+        solutionPositions = getSolutionPositions(solutionJson);
+
+        // Add solution row
+        addSolutionRow(solutionPositions.size());
 
         for (int id : questionPositions.keySet()) {
             Vector2Int pos = questionPositions.get(id);
@@ -116,12 +144,83 @@ public class WorkActivity extends AppCompatActivity {
                     continue;
                 }
 
-                EditText piece = buildEditText("", new Vector2Int(x, y));
+                final int xPos = x;
+                final int yPos = y;
+
+                boolean isSolutionCell = solutionPositions.contains(new Vector2Int(x, y));
+                EditText piece = buildEditText("", new Vector2Int(x, y), isSolutionCell);
                 puzzleGrid[x][y] = piece;
+
+                //add textWatcher to piece so that the text is changed the content is also changed in the solution row
+                piece.addTextChangedListener(new TextWatcher() {
+                    @Override
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                    }
+
+                    @Override
+                    public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable s) {
+                        int index = solutionPositions.indexOf(new Vector2Int(xPos, yPos));
+                        EditText solutionCell = (EditText) linearLayoutSolution.getChildAt(index);
+                        if (!solutionCell.getText().toString().equals(s.toString())) {
+                            solutionCell.setText(s.toString());
+                        }
+                    }
+                });
+
+                // Color the solution cells differently
+                if (solutionPositions.contains(new Vector2Int(x, y))) {
+                    piece.setBackgroundColor(Color.YELLOW); // Change color as needed
+                }
 
                 GPuzzleGrid.addView(piece);
             }
         }
+    }
+
+    private void addSolutionRow(int width) {
+        for (int x = 0; x < width; x++) {
+            EditText piece = buildEditText("", new Vector2Int(x, -1), false); // Use -1 to indicate solution row
+            linearLayoutSolution.addView(piece);
+            piece.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    int index = linearLayoutSolution.indexOfChild(piece);
+                    int x = solutionPositions.get(index).getX();
+                    int y = solutionPositions.get(index).getY();
+                    EditText puzzleCell = (EditText) puzzleGrid[x][y];
+
+                    if (!puzzleCell.getText().toString().equals(s.toString())) {
+                        puzzleCell.setText(s.toString());
+                    }
+                }
+            });
+        }
+    }
+
+    private ArrayList<Vector2Int> getSolutionPositions(JSONArray json) {
+        ArrayList<Vector2Int> positions = new ArrayList<>();
+
+        for (int i = 0; i < json.length(); i++) {
+            try {
+                positions.add(new Vector2Int(json.getString(i)));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return positions;
     }
 
     private HashMap<Integer, Vector2Int> getQuestionPositions(ArrayList<JSONObject> jsons) {
@@ -175,10 +274,10 @@ public class WorkActivity extends AppCompatActivity {
         return directions;
     }
 
-    private EditText buildEditText(String text, Vector2Int pos) {
+    private EditText buildEditText(String text, Vector2Int pos, boolean isSolutionCell) {
         EditText piece = new EditText(this);
 
-        LayoutParams params = new LayoutParams(dpToPx(BOX_WIDTH), dpToPx(BOX_HEIGHT));
+        LayoutParams params = new LayoutParams(Helper.dpToPx(BOX_WIDTH, this), Helper.dpToPx(BOX_HEIGHT, this));
         piece.setLayoutParams(params);
 
         TextViewCompat.setAutoSizeTextTypeWithDefaults(
@@ -214,6 +313,7 @@ public class WorkActivity extends AppCompatActivity {
                 }
             }
         });
+
         return piece;
     }
 
@@ -255,7 +355,7 @@ public class WorkActivity extends AppCompatActivity {
         Button piece = new Button(this);
 
         ConstraintLayout.LayoutParams params =
-                new ConstraintLayout.LayoutParams(dpToPx(BOX_WIDTH), dpToPx(BOX_HEIGHT));
+                new ConstraintLayout.LayoutParams(Helper.dpToPx(BOX_WIDTH, this), Helper.dpToPx(BOX_HEIGHT, this));
         params.setMargins(0, -3, 0, 0);
         piece.setLayoutParams(params);
 
@@ -291,22 +391,108 @@ public class WorkActivity extends AppCompatActivity {
         return piece;
     }
 
-    private void createPuzzleGrid(int width, int height, ArrayList<JSONObject> json) {
-        for (JSONObject obj : json) {
+    private void createPuzzleGrid(int width, int height, JSONObject json) {
+        try {
+            puzzleID = dbManager.writePuzzleToLocalDB(new String[0][0]);
+            ArrayList<JSONObject> questionInput = jsonArrayToArrayList(json.getJSONArray("questions"));
+
+            for (JSONObject obj : questionInput) {
+                int questionID = dbManager.writeQuestionToLocalDB(puzzleID, obj);
+                obj.put("id", questionID);
+                dbManager.writeQuestionToLocalDB(puzzleID, obj);
+
+                questions.put(questionID, obj);
+            }
+
+            buildPuzzleGrid(width, height, json);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String[][] exportGrid() {
+        String[][] grid = new String[puzzleGrid.length][puzzleGrid[0].length];
+
+        for (int y = 0; y < puzzleGrid.length; y++) {
+            for (int x = 0; x < puzzleGrid[0].length; x++) {
+                // If the cell is a button, it is a question cell
+                if (puzzleGrid[x][y] instanceof Button) {
+                    ArrayList<String> ids = new ArrayList<>();
+                    for (int id : (ArrayList<Integer>) puzzleGrid[x][y].getTag()) {
+                        ids.add(String.valueOf(id));
+                    }
+                    grid[y][x] = "qID:" + String.join(",", ids);
+                }
+                else {
+                    EditText cell = (EditText) puzzleGrid[x][y];
+                    grid[y][x] = cell.getText().toString();
+                }
+            }
+        }
+
+        return grid;
+    }
+
+    private void fillGrid(String[][] grid) {
+        for (int y = 0; y < grid.length; y++) {
+            for (int x = 0; x < grid[0].length; x++) {
+                if (puzzleGrid[x][y] instanceof EditText) {
+                    EditText cell = (EditText) puzzleGrid[x][y];
+                    cell.setText(grid[y][x]);
+                }
+            }
+        }
+    }
+
+    private void fillLinkedQuestions() {
+        //go through each question and check if the questions crosses any other questions.
+        // ALl questions that cross this question are linked to it and those ids are stored in the linked array of the question
+        try {
+            for (int id : questions.keySet()) {
+                JSONObject question = questions.get(id);
+                Vector2Int[] slotPos = new Vector2Int[question.getJSONArray("slots").length()];
+                for (int i = 0; i < slotPos.length; i++) {
+                    slotPos[i] = new Vector2Int(question.getJSONArray("slots").getString(i));
+                }
+
+                for (int otherID : questions.keySet()) {
+                    if (id == otherID)
+                        continue;
+
+                    // check this by checking if any of the positions in the slot array in the question is in the slot array of the other question
+                    JSONObject otherQuestion = questions.get(otherID);
+
+
+                }
+            }
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void startCalculation() {
+        String[][] grid = exportGrid();
+        dbManager.writePuzzleToLocalDB(grid);
+        //startAlgorithm(grid, questions.values().toArray(new JSONObject[0]));
+    }
+
+    private void finishCalculation(String[][] grid, JSONObject[] questions, boolean isSuccessful) {
+        fillGrid(grid);
+        dbManager.writePuzzleToLocalDB(grid);
+
+        for (JSONObject question : questions) {
             try {
-                questions.put(obj.getInt("id"), obj);
+                int id = question.getInt("id");
+                this.questions.put(id, question);
+                dbManager.writeQuestionToLocalDB(puzzleID, question);
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
         }
-
-        buildPuzzleGrid(width, height, json);
     }
 
-    public int dpToPx(int dp) {
-        float density = WorkActivity.this.getResources()
-                .getDisplayMetrics()
-                .density;
-        return Math.round((float) dp * density);
+    private void progressUpdate(String message, int progress) {
+        // Update progress bar
+        return;
     }
 }
